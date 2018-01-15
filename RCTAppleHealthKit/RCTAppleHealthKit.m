@@ -3,8 +3,7 @@
 //  RCTAppleHealthKit
 //
 //  Created by Greg Wilson on 2016-06-26.
-//  This source code is licensed under the MIT-style license found in the
-//  LICENSE file in the root directory of this source tree.
+//  Copyright © 2016 Greg Wilson. All rights reserved.
 //
 
 #import "RCTAppleHealthKit.h"
@@ -26,6 +25,11 @@
 @synthesize bridge = _bridge;
 
 RCT_EXPORT_MODULE();
+
+RCT_EXPORT_METHOD(getAuthorizationStatus:(NSString *)input callback:(RCTResponseSenderBlock)callback)
+{
+    [self authorizationStatus:input callback:callback];
+}
 
 RCT_EXPORT_METHOD(isAvailable:(RCTResponseSenderBlock)callback)
 {
@@ -177,7 +181,6 @@ RCT_EXPORT_METHOD(saveMindfulSession:(NSDictionary *)input callback:(RCTResponse
     [self mindfulness_saveMindfulSession:input callback:callback];
 }
 
-
 - (void)isHealthKitAvailable:(RCTResponseSenderBlock)callback
 {
     BOOL isAvailable = NO;
@@ -237,6 +240,34 @@ RCT_EXPORT_METHOD(saveMindfulSession:(NSDictionary *)input callback:(RCTResponse
         callback(@[RCTMakeError(@"HealthKit data is not available", nil, nil)]);
     }
 }
+
+- (void)authorizationStatus:(NSString *)input callback:(RCTResponseSenderBlock)callback
+{
+    // This is not currently using the input passed at all and is only using the MindfulSession type which is fine for our use case.
+    // TODO: Update to get CategoryType from string passed to input variable
+    HKCategoryType *categoryType = [HKObjectType categoryTypeForIdentifier:HKCategoryTypeIdentifierMindfulSession];
+    HKAuthorizationStatus status = [self.healthStore authorizationStatusForType:categoryType];
+    
+    BOOL isActive;
+    switch (status) {
+        case HKAuthorizationStatusSharingAuthorized:
+            isActive = YES;
+            NSLog(@"is authorized");
+            break;
+        case HKAuthorizationStatusSharingDenied:
+            isActive = NO;
+            NSLog(@"is denied");
+            break;
+        case HKAuthorizationStatusNotDetermined:
+            isActive = NO;
+            NSLog(@"is not determined");
+            break;
+        default:
+            break;
+    }
+    callback(@[[NSNull null], @(isActive)]);
+}
+
 
 - (void)getModuleInfo:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
 {
